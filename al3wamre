@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ملازم الأحياء</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --accent: #2ecc71;
+    --accent2: #27ae60;
+    --red: #e74c3c;
+    --dark: rgba(0,0,0,0.55);
+    --glass: rgba(255,255,255,0.13);
+    --glass-border: rgba(255,255,255,0.25);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Tajawal', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* Dynamic AI background */
+  #bg-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    transition: opacity 0.8s ease;
+  }
+
+  /* Overlay */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.38);
+    z-index: -1;
+  }
+
+  /* MODAL */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(8px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.4s ease;
+  }
+
+  .modal {
+    background: rgba(10,20,15,0.92);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 40px 36px;
+    max-width: 520px;
+    width: 90%;
+    text-align: center;
+    color: #fff;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(46,204,113,0.2);
+    animation: slideUp 0.5s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  .modal .bismillah {
+    font-size: 2rem;
+    color: var(--accent);
+    margin-bottom: 20px;
+    text-shadow: 0 0 20px rgba(46,204,113,0.5);
+  }
+
+  .modal p {
+    font-size: 1rem;
+    line-height: 1.9;
+    color: rgba(255,255,255,0.88);
+    margin-bottom: 28px;
+  }
+
+  .modal-btn {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+    border: none;
+    padding: 14px 48px;
+    border-radius: 50px;
+    font-family: 'Tajawal', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 20px rgba(46,204,113,0.4);
+  }
+
+  .modal-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(46,204,113,0.5);
+  }
+
+  /* MAIN CONTENT */
+  .main {
+    display: none;
+    min-height: 100vh;
+    padding: 40px 20px 60px;
+  }
+
+  .main.visible { display: block; animation: fadeIn 0.6s ease; }
+
+  header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  header h1 {
+    font-size: clamp(1.8rem, 5vw, 3rem);
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 2px 20px rgba(0,0,0,0.5);
+    letter-spacing: -0.5px;
+  }
+
+  header h1 span { color: var(--accent); }
+
+  header p {
+    color: rgba(255,255,255,0.7);
+    margin-top: 8px;
+    font-size: 1rem;
+  }
+
+  /* CARDS GRID */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
+  .card {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 24px;
+    backdrop-filter: blur(12px);
+    color: #fff;
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+  }
+
+  .card-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: #fff;
+  }
+
+  .card-icon {
+    font-size: 2rem;
+    margin-bottom: 12px;
+  }
+
+  .btn-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    flex: 1;
+    min-width: 90px;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Tajawal', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .btn-view {
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.3);
+  }
+
+  .btn-view:hover {
+    background: rgba(255,255,255,0.25);
+  }
+
+  .btn-download {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(46,204,113,0.3);
+  }
+
+  .btn-download:hover {
+    transform: scale(1.04);
+    box-shadow: 0 6px 20px rgba(46,204,113,0.5);
+  }
+
+  .btn-whatsapp {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(231,76,60,0.3);
+    width: 100%;
+  }
+
+  .btn-whatsapp:hover {
+    transform: scale(1.03);
+    box-shadow: 0 6px 20px rgba(231,76,60,0.5);
+  }
+
+  /* DOWNLOAD MODAL */
+  .dl-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(6px);
+    z-index: 2000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .dl-modal-backdrop.active { display: flex; animation: fadeIn 0.3s ease; }
+
+  .dl-modal {
+    background: rgba(10,25,18,0.95);
+    border: 1px solid rgba(46,204,113,0.3);
+    border-radius: 18px;
+    padding: 36px;
+    max-width: 380px;
+    width: 88%;
+    text-align: center;
+    color: #fff;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    animation: slideUp 0.4s ease;
+  }
+
+  .timer-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 4px solid var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--accent);
+    margin: 0 auto 20px;
+    box-shadow: 0 0 20px rgba(46,204,113,0.3);
+    transition: all 0.3s;
+  }
+
+  .salah-text {
+    font-size: 1.1rem;
+    color: var(--accent);
+    margin-bottom: 8px;
+    font-weight: 700;
+  }
+
+  .salah-sub {
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 20px;
+  }
+
+  .dl-link {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 12px 30px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 1rem;
+    transition: all 0.2s;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .dl-link.ready {
+    opacity: 1;
+    pointer-events: all;
+    animation: pulse 1.5s infinite;
+  }
+
+  .close-dl {
+    position: absolute;
+    top: 12px;
+    left: 16px;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.5);
+    font-size: 1.4rem;
+    cursor: pointer;
+  }
+
+  /* FOOTER */
+  footer {
+    text-align: center;
+    padding: 30px 20px;
+    color: rgba(255,255,255,0.8);
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-shadow: 0 1px 10px rgba(0,0,0,0.5);
+    letter-spacing: 1px;
+  }
+
+  /* ANIMATIONS */
+  @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+  @keyframes slideUp {
+    from { transform: translateY(40px); opacity: 0 }
+    to { transform: translateY(0); opacity: 1 }
+  }
+  @keyframes pulse {
+    0%,100% { box-shadow: 0 4px 14px rgba(46,204,113,0.3) }
+    50% { box-shadow: 0 4px 28px rgba(46,204,113,0.7) }
+  }
+  @keyframes bgFade {
+    from { opacity: 0 }
+    to { opacity: 1 }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+<div class="overlay"></div>
+
+<!-- Welcome Modal -->
+<div class="modal-backdrop" id="welcomeModal">
+  <div class="modal">
+    <div class="bismillah">﷽</div>
+    <p>
+      <strong>ملاحظة:</strong> هذا الموقع أنشأته لتسهيل وصول الملازم للجميع، ولست أنا من صوّرها. وصلتني بعد ما وصلتني ملزمة الشرح وقررت أسويلهن موقع.
+      <br><br>
+      وأنا مسامح الكل بنشرها ما عدا <strong style="color:#e74c3c">قناة الثانوية العامة في قطر (قناة الفلسطيني)</strong>.
+      <br><br>
+      أرجو منكم الدعاء وشكراً 🤍
+    </p>
+    <button class="modal-btn" onclick="openSite()">حسناً ✓</button>
+  </div>
+</div>
+
+<!-- Download Timer Modal -->
+<div class="dl-modal-backdrop" id="dlModal">
+  <div class="dl-modal" style="position:relative">
+    <button class="close-dl" onclick="closeDlModal()">✕</button>
+    <div class="timer-circle" id="timerCircle">5</div>
+    <div class="salah-text">اللهم صلِّ على محمد ﷺ</div>
+    <div class="salah-sub">وعلى آله وصحبه وسلم</div>
+    <a href="#" id="dlLink" class="dl-link" target="_blank" rel="noopener">⬇ تحميل الملف</a>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div class="main" id="mainContent">
+  <header>
+    <h1>ملازم <span>الأحياء</span> 🌿</h1>
+    <p>اضغط تصفح للعرض أو تحميل للحفظ</p>
+  </header>
+
+  <div class="cards">
+
+    <!-- شرح العوامري -->
+    <div class="card">
+      <div class="card-icon">📚</div>
+      <div class="card-title">شرح العوامري</div>
+      <div class="btn-group">
+        <a class="btn btn-view" href="https://drive.google.com/file/d/1bON85g9Fqb3I56kn0m_ZUuBYDiQHD0qN/view?usp=drive_link" target="_blank">👁 تصفح</a>
+        <button class="btn btn-download" onclick="startDownload('https://drive.google.com/uc?export=download&id=1bON85g9Fqb3I56kn0m_ZUuBYDiQHD0qN')">⬇ تحميل</button>
+      </div>
+    </div>
+
+    <!-- أسئلة الوحدة الرابعة -->
+    <div class="card">
+      <div class="card-icon">📝</div>
+      <div class="card-title">أسئلة الوحدة الرابعة</div>
+      <div class="btn-group">
+        <a class="btn btn-view" href="https://drive.google.com/file/d/16jegekaNtIQR0YSQ38UOEZ3Z1XwnE4I5/view?usp=drive_link" target="_blank">👁 تصفح</a>
+        <button class="btn btn-download" onclick="startDownload('https://drive.google.com/uc?export=download&id=16jegekaNtIQR0YSQ38UOEZ3Z1XwnE4I5')">⬇ تحميل</button>
+      </div>
+    </div>
+
+    <!-- أسئلة الوحدة الخامسة -->
+    <div class="card">
+      <div class="card-icon">📝</div>
+      <div class="card-title">أسئلة الوحدة الخامسة</div>
+      <div class="btn-group">
+        <a class="btn btn-view" href="https://drive.google.com/file/d/1s_JIrwgkQBafWswLft1nDWu0r64fApcE/view?usp=drive_link" target="_blank">👁 تصفح</a>
+        <button class="btn btn-download" onclick="startDownload('https://drive.google.com/uc?export=download&id=1s_JIrwgkQBafWswLft1nDWu0r64fApcE')">⬇ تحميل</button>
+      </div>
+    </div>
+
+    <!-- أسئلة الوحدة السادسة -->
+    <div class="card">
+      <div class="card-icon">📝</div>
+      <div class="card-title">أسئلة الوحدة السادسة</div>
+      <div class="btn-group">
+        <a class="btn btn-view" href="https://drive.google.com/file/d/1gYyaTVuyljIPDcJtgsz66vQloT4GNf0Y/view?usp=drive_link" target="_blank">👁 تصفح</a>
+        <button class="btn btn-download" onclick="startDownload('https://drive.google.com/uc?export=download&id=1gYyaTVuyljIPDcJtgsz66vQloT4GNf0Y')">⬇ تحميل</button>
+      </div>
+    </div>
+
+    <!-- أسئلة الوحدة السابعة -->
+    <div class="card">
+      <div class="card-icon">📝</div>
+      <div class="card-title">أسئلة الوحدة السابعة</div>
+      <div class="btn-group">
+        <a class="btn btn-view" href="https://drive.google.com/file/d/1vdCpRFx2sWebiF2ExBke8ibEIf4r_VlH/view?usp=drive_link" target="_blank">👁 تصفح</a>
+        <button class="btn btn-download" onclick="startDownload('https://drive.google.com/uc?export=download&id=1vdCpRFx2sWebiF2ExBke8ibEIf4r_VlH')">⬇ تحميل</button>
+      </div>
+    </div>
+
+    <!-- أطلس رسومات الأحياء -->
+    <div class="card">
+      <div class="card-icon">🌿</div>
+      <div class="card-title">أطلس لرسومات الأحياء</div>
+      <div class="btn-group">
+        <a class="btn btn-view" href="https://drive.google.com/file/d/1Diq9MdiEa6JNJ0ZsBbNEy_veiMjganVj/view?usp=drive_link" target="_blank">👁 تصفح</a>
+        <button class="btn btn-download" onclick="startDownload('https://drive.google.com/uc?export=download&id=1Diq9MdiEa6JNJ0ZsBbNEy_veiMjganVj')">⬇ تحميل</button>
+      </div>
+    </div>
+
+    <!-- قناة الرياضيات -->
+    <div class="card" style="grid-column: 1 / -1;">
+      <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+        <div class="card-icon" style="font-size:2.5rem; margin-bottom:0;">📐</div>
+        <div class="card-title" style="margin-bottom:0; flex:1; font-size:1.15rem;">
+          أحسن قناة لمادة الرياضيات
+          <br><small style="font-weight:400;opacity:0.8">(قناة المستر في الرياضيات)</small>
+        </div>
+        <a class="btn btn-whatsapp" href="https://chat.whatsapp.com/LffrmhfKAilCl5ODlqXqlT?mode=gi_t" target="_blank" rel="noopener" style="flex:0 0 auto; width:auto; padding: 12px 36px; font-size:1rem;">📲 انضم للقناة</a>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>اللهم صلِّ على محمد وعلى آله وصحبه وسلم 🤍</footer>
+</div>
+
+<script>
+// ===== BACKGROUND GENERATOR =====
+const scenes = [
+  // Sunrise forest
+  { sky: ['#ff9a3c','#ffca66','#87ceeb'], ground: '#2d5a1b', elements: 'forest', label: 'غابة عند الشروق' },
+  // Ocean at dusk
+  { sky: ['#2c3e7a','#7b4fa0','#e8836a'], ground: '#1a4a6b', elements: 'ocean', label: 'محيط عند الغروب' },
+  // Mountain snow
+  { sky: ['#c9e8f5','#e8f4f8','#f0f8ff'], ground: '#6b9ab8', elements: 'mountains', label: 'جبال ثلجية' },
+  // Desert sunset
+  { sky: ['#ff6b35','#f7c59f','#ffe0b2'], ground: '#c8913a', elements: 'desert', label: 'صحراء عند الغروب' },
+  // Night stars
+  { sky: ['#0a0a2e','#1a1a4e','#0d1b3e'], ground: '#1a3a1a', elements: 'night', label: 'ليل مرصّع بالنجوم' },
+  // Spring meadow
+  { sky: ['#87ceeb','#b8e0f7','#dff2ff'], ground: '#4a8c2a', elements: 'meadow', label: 'مرج ربيعي' },
+];
+
+let currentScene = -1;
+const canvas = document.getElementById('bg-canvas');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+
+function drawBackground() {
+  currentScene = (currentScene + 1) % scenes.length;
+  const scene = scenes[currentScene];
+  resizeCanvas();
+  const w = canvas.width, h = canvas.height;
+
+  // Sky gradient
+  const sky = ctx.createLinearGradient(0, 0, 0, h * 0.7);
+  scene.sky.forEach((c, i) => sky.addColorStop(i / (scene.sky.length - 1), c));
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, w, h);
+
+  const e = scene.elements;
+
+  if (e === 'forest') {
+    // Ground
+    ctx.fillStyle = '#2d5a1b';
+    ctx.fillRect(0, h * 0.7, w, h * 0.3);
+    // Trees
+    for (let i = 0; i < 18; i++) {
+      const x = (w / 18) * i + (w / 36);
+      const th = h * 0.15 + Math.random() * h * 0.2;
+      const tx = x + (Math.random() - 0.5) * 40;
+      ctx.fillStyle = `hsl(${120 + Math.random() * 30},${40 + Math.random() * 30}%,${20 + Math.random() * 20}%)`;
+      ctx.beginPath();
+      ctx.moveTo(tx, h * 0.7 - th);
+      ctx.lineTo(tx - th * 0.35, h * 0.7);
+      ctx.lineTo(tx + th * 0.35, h * 0.7);
+      ctx.fill();
+    }
+    // Sun
+    const grad = ctx.createRadialGradient(w * 0.8, h * 0.15, 0, w * 0.8, h * 0.15, 60);
+    grad.addColorStop(0, 'rgba(255,220,80,0.95)');
+    grad.addColorStop(1, 'rgba(255,150,50,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath(); ctx.arc(w * 0.8, h * 0.15, 60, 0, Math.PI * 2); ctx.fill();
+  } else if (e === 'ocean') {
+    // Water
+    const water = ctx.createLinearGradient(0, h * 0.6, 0, h);
+    water.addColorStop(0, '#1a4a8b'); water.addColorStop(1, '#0a1f3a');
+    ctx.fillStyle = water;
+    ctx.fillRect(0, h * 0.6, w, h * 0.4);
+    // Waves
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 5; i++) {
+      const y = h * 0.65 + i * h * 0.06;
+      ctx.beginPath();
+      for (let x = 0; x < w; x += 5) {
+        ctx.lineTo(x, y + Math.sin(x * 0.02 + i) * 8);
+      }
+      ctx.stroke();
+    }
+    // Moon
+    ctx.fillStyle = 'rgba(255,240,200,0.9)';
+    ctx.beginPath(); ctx.arc(w * 0.3, h * 0.2, 35, 0, Math.PI * 2); ctx.fill();
+  } else if (e === 'mountains') {
+    // Snow peaks
+    const ranges = [[0.1,0.6,0.3], [0.35,0.55,0.25], [0.6,0.65,0.35], [0.85,0.6,0.3]];
+    ranges.forEach(([cx, base, size], i) => {
+      ctx.fillStyle = `hsl(200,${15+i*5}%,${50+i*5}%)`;
+      ctx.beginPath();
+      ctx.moveTo(w * cx, h * (base - size));
+      ctx.lineTo(w * (cx - size * 0.7), h * base);
+      ctx.lineTo(w * (cx + size * 0.7), h * base);
+      ctx.fill();
+      // Snow cap
+      ctx.fillStyle = '#eef5ff';
+      ctx.beginPath();
+      ctx.moveTo(w * cx, h * (base - size));
+      ctx.lineTo(w * (cx - size * 0.15), h * (base - size * 0.7));
+      ctx.lineTo(w * (cx + size * 0.15), h * (base - size * 0.7));
+      ctx.fill();
+    });
+    ctx.fillStyle = '#4a7a9b';
+    ctx.fillRect(0, h * 0.65, w, h * 0.35);
+  } else if (e === 'desert') {
+    // Sand dunes
+    ctx.fillStyle = '#d4a853';
+    ctx.fillRect(0, h * 0.6, w, h * 0.4);
+    for (let i = 0; i < 4; i++) {
+      ctx.fillStyle = `hsl(38,${50+i*8}%,${50+i*6}%)`;
+      ctx.beginPath();
+      ctx.moveTo(w * (i * 0.3), h);
+      ctx.quadraticCurveTo(w * (i * 0.3 + 0.15), h * 0.55, w * (i * 0.3 + 0.3), h);
+      ctx.fill();
+    }
+    // Cactus silhouettes
+    for (let i = 0; i < 3; i++) {
+      const cx = w * (0.15 + i * 0.35);
+      ctx.fillStyle = '#1a4a1a';
+      ctx.fillRect(cx - 6, h * 0.45, 12, h * 0.2);
+      ctx.fillRect(cx - 20, h * 0.52, 14, 8);
+      ctx.fillRect(cx + 6, h * 0.55, 14, 8);
+    }
+  } else if (e === 'night') {
+    // Stars
+    for (let i = 0; i < 200; i++) {
+      const x = Math.random() * w, y = Math.random() * h * 0.75;
+      const r = Math.random() * 1.5;
+      ctx.fillStyle = `rgba(255,255,240,${0.4 + Math.random() * 0.6})`;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+    }
+    // Moon crescent
+    ctx.fillStyle = 'rgba(255,245,210,0.95)';
+    ctx.beginPath(); ctx.arc(w * 0.75, h * 0.18, 40, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = scene.sky[0];
+    ctx.beginPath(); ctx.arc(w * 0.75 + 20, h * 0.18 - 8, 34, 0, Math.PI * 2); ctx.fill();
+    // Ground/trees silhouette
+    ctx.fillStyle = '#0a1a0a';
+    ctx.fillRect(0, h * 0.75, w, h * 0.25);
+    for (let i = 0; i < 12; i++) {
+      const tx = (w / 12) * i + w / 24;
+      const th = h * 0.1 + Math.random() * h * 0.15;
+      ctx.beginPath();
+      ctx.moveTo(tx, h * 0.75 - th);
+      ctx.lineTo(tx - th * 0.3, h * 0.75);
+      ctx.lineTo(tx + th * 0.3, h * 0.75);
+      ctx.fill();
+    }
+  } else if (e === 'meadow') {
+    // Ground
+    ctx.fillStyle = '#5cad2f';
+    ctx.fillRect(0, h * 0.65, w, h * 0.35);
+    // Flowers
+    for (let i = 0; i < 60; i++) {
+      const fx = Math.random() * w, fy = h * 0.65 + Math.random() * h * 0.3;
+      const colors = ['#ff6b9d','#ffb347','#fff176','#f48fb1','#ce93d8'];
+      ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
+      ctx.beginPath(); ctx.arc(fx, fy, 4 + Math.random() * 5, 0, Math.PI * 2); ctx.fill();
+    }
+    // Sun
+    const grad2 = ctx.createRadialGradient(w * 0.5, h * 0.1, 0, w * 0.5, h * 0.1, 70);
+    grad2.addColorStop(0, 'rgba(255,230,80,1)');
+    grad2.addColorStop(1, 'rgba(255,180,50,0)');
+    ctx.fillStyle = grad2;
+    ctx.beginPath(); ctx.arc(w * 0.5, h * 0.1, 70, 0, Math.PI * 2); ctx.fill();
+    // Clouds
+    for (let i = 0; i < 4; i++) {
+      const cx = w * (0.1 + i * 0.25), cy = h * (0.25 + i * 0.05);
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      for (let j = 0; j < 4; j++) {
+        ctx.beginPath(); ctx.arc(cx + j * 22 - 30, cy, 22 - Math.abs(j - 1.5) * 4, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+  }
+
+  canvas.style.animation = 'bgFade 0.8s ease';
+  setTimeout(() => canvas.style.animation = '', 800);
+}
+
+// ===== WELCOME MODAL =====
+function openSite() {
+  document.getElementById('welcomeModal').style.display = 'none';
+  document.getElementById('mainContent').classList.add('visible');
+}
+
+// ===== DOWNLOAD MODAL =====
+let timerInterval = null;
+
+function startDownload(url) {
+  const modal = document.getElementById('dlModal');
+  const circle = document.getElementById('timerCircle');
+  const link = document.getElementById('dlLink');
+  
+  link.href = url;
+  link.classList.remove('ready');
+  circle.textContent = '5';
+  modal.classList.add('active');
+
+  let count = 5;
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    count--;
+    circle.textContent = count;
+    if (count <= 0) {
+      clearInterval(timerInterval);
+      circle.textContent = '✓';
+      circle.style.borderColor = '#27ae60';
+      link.classList.add('ready');
+    }
+  }, 1000);
+}
+
+function closeDlModal() {
+  clearInterval(timerInterval);
+  document.getElementById('dlModal').classList.remove('active');
+  document.getElementById('timerCircle').style.borderColor = 'var(--accent)';
+}
+
+// ===== INIT =====
+window.addEventListener('resize', () => { resizeCanvas(); drawBackground(); });
+drawBackground(); // initial background
+</script>
+</body>
+</html>
